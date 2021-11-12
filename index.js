@@ -20,14 +20,16 @@ async function run() {
       const allBlogs = database.collection('blogs');
       const allOrders = database.collection('orders');
       const allReviews = database.collection('reviews');
+      const allUsers = database.collection('users');
       
       //get multiple products data
       app.get('/products', async(req,res)=>{
           const count= req.query.count;
+          const newCount=parseFloat(count)
           const query= {};
           let result=[]
-          if(parseFloat(count)){
-            const cursor = allProducts.find(query).limit(parseFloat(count));
+          if(newCount){
+            const cursor = allProducts.find(query).limit(newCount);
              result= await cursor.toArray();
           }
           else{
@@ -52,13 +54,43 @@ async function run() {
           res.json(result)
       })
 
+      // delete a single order data based on order id
+      app.delete('/products/:id', async(req,res)=>{
+        const id =req.params.id;
+        const query={_id:ObjectId(id)};
+        const result= await allProducts.deleteOne(query);
+        res.json(result)
+      })
+
+      // updata order status aproved
+        app.put('/products', async(req,res)=>{
+          const data =req.body;
+          const id=data._id;
+          // console.log(id)
+          const query={_id:ObjectId(id)};
+          const options = { upsert: true };
+          const updateDoc = {
+            $set: {
+              name:data.name,
+              details:data.details,
+              shortDetails:data.shortDetails,
+              price:data.price,
+              img:data.img,
+              rating:data.rating,
+            },
+          };
+          const result= await allProducts.updateOne(query, updateDoc, options);
+          res.json(result)
+      })
+
     //getting all blogs data 
       app.get('/blogs', async(req,res)=>{
           const count= req.query.count;
+          const newCount=parseFloat(count)
           const query= {};
           let result=[]
-          if(parseFloat(count)){
-            const cursor = allBlogs.find(query).skip(1).limit(parseFloat(count));
+          if(newCount){
+            const cursor = allBlogs.find(query).skip(1).limit(newCount);
              result= await cursor.toArray();
           }
           else{
@@ -131,7 +163,48 @@ async function run() {
         res.json(result)
     })
 
+    // save user data on db
+    app.post('/users',async(req,res)=>{
+      const data=req.body;
+      const result= await allUsers.insertOne(data);
+      res.json(result)
+    })
 
+
+    // make user a ADMIN
+    app.put('/users',async(req,res)=>{
+      const email=req.body.email;
+      const user= await allUsers.findOne({email:email})
+      if(user){
+          const filter = { email:email };
+          const options = { upsert: true };
+          const updateDoc = {
+            $set: {
+               role:'admin'
+            },
+          };
+          const result = await allUsers.updateOne(filter, updateDoc, options);
+          res.json(result)
+      }
+      else{
+        res.send({
+          message:'email not match any user'
+        })
+      }
+    })
+
+    // checking user admin or not
+    app.get('/users',async(req,res)=>{
+       const email= req.query.email;
+       const query= {email:email};
+       const user= await allUsers.findOne(query);
+       if(user?.role === 'admin'){
+         res.json(true)
+       }
+       else{
+         res.json(false)
+       }
+    })
 
 
     } finally {
