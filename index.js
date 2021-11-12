@@ -45,6 +45,13 @@ async function run() {
           res.json(result)
       })
 
+     //Add single product data on datavbase
+      app.post('/products', async(req,res)=>{
+          const data= req.body;
+          const result = await allProducts.insertOne(data);
+          res.json(result)
+      })
+
     //getting all blogs data 
       app.get('/blogs', async(req,res)=>{
           const count= req.query.count;
