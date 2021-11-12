@@ -19,6 +19,7 @@ async function run() {
       const allProducts = database.collection('products');
       const allBlogs = database.collection('blogs');
       const allOrders = database.collection('orders');
+      const allReviews = database.collection('reviews');
       
       //get multiple products data
       app.get('/products', async(req,res)=>{
@@ -44,7 +45,7 @@ async function run() {
           res.json(result)
       })
 
-    //getting blogs data
+    //getting all blogs data 
       app.get('/blogs', async(req,res)=>{
           const count= req.query.count;
           const query= {};
@@ -67,11 +68,58 @@ async function run() {
         res.json(result)
     })
 
-    // get order data based on single email
+    // get order all data or based on single email
     app.get('/orderProducts', async(req,res)=>{
         const email= req.query.email;
-        const query= {email:email};
-        const cursor = allOrders.find(query);
+        let result=[];
+        if(email){
+          const query= {email:email};
+          const cursor = allOrders.find(query);
+          result = await cursor.toArray();
+        }
+        else{
+          const query= {};
+          const cursor = allOrders.find(query);
+          result = await cursor.toArray();
+        }
+        
+        res.json(result)
+    })
+
+    // updata order status aproved
+    app.put('/orderProducts/:id', async(req,res)=>{
+        const id =req.params.id;
+        const query={_id:ObjectId(id)};
+        const options = { upsert: true };
+        const updateDoc = {
+          $set: {
+            status:'approved'
+          },
+        };
+        const result= await allOrders.updateOne(query, updateDoc, options);
+        res.json(result)
+    })
+
+    // delete a single order data based on order id
+    app.delete('/orderProducts/:id', async(req,res)=>{
+        const id =req.params.id;
+        const query={_id:ObjectId(id)};
+        const result= await allOrders.deleteOne(query);
+        res.json(result)
+    })
+
+
+    // post single review data
+    app.post('/reviews',async(req,res)=>{
+        const data=req.body;
+        const result= await allReviews.insertOne(data);
+        res.json(result)
+    })
+
+    // getting all  reviews  data 
+    app.get('/reviews',async(req,res)=>{
+        const query={}
+        const cursor= allReviews.find(query);
         const result = await cursor.toArray();
         res.json(result)
     })
